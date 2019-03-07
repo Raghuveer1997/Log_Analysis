@@ -1,88 +1,145 @@
-# Project 3: Logs Analysis Project
-### by Raghuveer Pachipulusu
+# Logs Analysis Udacity Project
+### Raghuveer Pachipulusu
 
-Logs Analysis Project, part of the Udacity [Full Stack Web Developer
-Nanodegree](https://www.udacity.com/course/full-stack-web-developer-nanodegree--nd004).
+![Part of the Udacity Full-Stack Web Development Nanodegree]
 
-## What it is and does
+## What it is Log Analysis ?
 
-A Reporting page that prints out reports in a plain text format based on the data in the database.This Reporting tool is a python program using the `psycopg2` module to connect to the database.
+It is a Reporting page.
+It prints out reports in text format based on the data in the database.`psycopg2` Module a python program is used to Connect With Database.
 
-## Project content
+## Contents Of The Project 
 
-This Project consists for the following files are:
+Log Analysis Project consists of following files:
 
-* Udacity_Log_Analysis.py - main file to run this Logs Analysis Reporting tool
-* README.md - instructions to install this reporting tool
-* views.sql - views file
+* Udacity_Log_Analysis.py - main python file to run this Logs Analysis Reporting tool
+* sqlviews.sql - views file
+* README.md - Steps To Follow For installing this reporting tool
 * OutPut.PNG
 
-## Required Tools
+## Tools Required For This Project 
 
-1. Python
-2. Vagrant
-3. VirtualBox
-
-## Installation
-
-There are some dependancies and a few instructions on how to run the application.
-
-## Dependencies
-
+1. Vagrant
+2. VirtualBox
+3. Python
 - [Vagrant](https://www.vagrantup.com/)
-- [Udacity Vagrantfile](https://github.com/udacity/fullstack-nanodegree-vm)
 - [VirtualBox](https://www.virtualbox.org/wiki/Downloads)
+- [Python] download latest version(https://www.python.org/)
 
-## How to Install
-1. Install Vagrant & VirtualBox
-2. Clone the Udacity Vagrantfile
-3. Go to Vagrant directory and either clone this repo or download and place zip here
-3. Launch the Vagrant VM (`vagrant up`)
-4. Log into Vagrant VM (`vagrant ssh`)
-5. Navigate to `cd /vagrant` as instructed in terminal
+## Steps to Install
+1. Install Vagrant into your computer
+2. install VirtualBox into your computer
 
-## How to Run Project
 
-Download the project zip file to you computer and unzip the file then place inside `vagrant/MyLog_Analysis-Master`.
+## Steps For Runing The Project
 
-  1. Launch the Vagrant VM inside Vagrant sub-directory in the downloaded fullstack-nanodegree-vm repository using command:
+Download the project zip file. Then unzip the file And  place It inside `vagrant/Udacity_Log_Analysis-Master`.
+
+Firstly Open command prompt in Project folder and Initilize the Ubuntu version using vagrant to generate Vagrant file
+ `vagrant init ubuntu/xenial64`
+
+
+Later We Need To Launch the Vagrant VM using command:
+  `vagrant up`
+Then Log into this using command:
+  `vagrant ssh`
   
-  ```
-    $ vagrant up
-  ```
-  2. Then Log into this using command:
-  
-  ```
-    $ vagrant ssh
-  ```
-  3. Download database from [here](https://d17h27t6h515a5.cloudfront.net/topher/2016/August/57b5f748_newsdata/newsdata.zip).
+ Change directory to `cd /vagrant` 
+	or
+   run these commands for exiting two directories
+   i)cd ..
+   ii)cd ..
+   iii)cd/vagrant
+ 
+Download database newsdata.sql from [here](https://d17h27t6h515a5.cloudfront.net/topher/2016/August/57b5f748_newsdata/newsdata.zip).
 
-  4. Unzip this file after downloading it. The file inside is called newsdata.sql.
+Extract or Unzip the file newsdata.sql 
 
-  5. Copy the newsdata.sql file and place inside `vagrant/MyLog_Analysis-Master
+Copy the newsdata.sql file and place the file inside `vagrant/Udacity_Log_Analysis-Master
 `.
+In CommandPrompt Change directory to `vagrant/Udacity_Log_Analysis-Master` and look around with ls.
 
-  6. In terminal Change directory to `vagrant/MyLog_Analysis-Master` and look around with ls.
+connect to postgres database using command
+`sudo su - postgres`
+`psql`
 
-  7. Load the data in local database using the command:
+For creating user vagrant use command:
+`create user vagrant with superuser createrole createdb replication bypassrls;`
+
+For creating database news use command:
+`create database news with owner vagrant;`
+
+To change database to news:
+`\c news`
+	-use \c to connect to database="news"
+	-use \dt to see the tables in database
+	-use \dv to see the views in database
+
+Run the two `CREATE VIEW` statements in the [Database Views](#database-views) section.
+	
+	-use \q to quit the database
+
+To Logout from current user we use command:
+`logout`
+When we get back to the directory  
+`vagrant/Udacity_Log_Analysis-Master`  
+Load the data in local database using the command:
 
   ```
     $ psql -d news -f newsdata.sql
   ```
-  8.Load the views(Virtual Table) in local database using command:
-  
-  ```
-	$ psql -d news -f views.sql
-  ```
-  
-   9. Run Udacity_Log_Analysis.py using:
+ 
+Run Udacity_Log_Analysis.py main python file using:
   ```
     $ python Udacity_Log_Analysis.py
   ```
-  Note: Queries will take sometime to execute 
+    
+## Database Views
 
+For running the log analysis code, you need to create views in the database. So go to the psql and run the following code.
 
-## Miscellaneous
+* **popular_views**:
+	```
+	create or replace view popular_views as select
+	articles.title, articles.id, articles.author,
+	(select count(log.path)
+	from log
+	where log.path = concat('/article/',articles.slug)) as topviews
+	from articles
+	order by topviews desc;
+	```
+* **overall_req**:
+	```
+	create or replace view overall_req as
+	select count(status) as count,
+       date(time) as date
+	   from log
+	group by date
+	order by count desc;
+	
+	```
+* **fault_req**:
+	```
+	create or replace view fault_req as
+	select count(*) as count,
+       date(time) as date
+	from log
+	where log.status::text != '200 OK'
+	group by date
+	order by count desc;
 
-This README document is based on a template suggested by PhilipCoach in this
-Udacity forum [post](https://discussions.udacity.com/t/readme-files-in-project-1/23524).
+	```
+
+* **fault_perc**:
+
+	```	
+	create or replace view fault_perc as
+	select overall_req.date,
+       round((100.0*fault_req.count)/overall_req.count,1) as fault_prc
+	from fault_req,
+     overall_req
+	where fault_req.date=overall_req.date;
+	
+	```
+### Useful links
+- PEP8 tool to check Python styles (http://pep8online.com/)
