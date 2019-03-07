@@ -21,10 +21,10 @@ Log Analysis Project consists of following files:
 
 1. Vagrant
 2. VirtualBox
-3. Python
+3. Python -Download latest version of python
 - [Vagrant](https://www.vagrantup.com/)
 - [VirtualBox](https://www.virtualbox.org/wiki/Downloads)
-- [Python] download latest version(https://www.python.org/)
+- [Python](https://www.python.org/)
 
 ## Steps to Install
 1. Install Vagrant into your computer
