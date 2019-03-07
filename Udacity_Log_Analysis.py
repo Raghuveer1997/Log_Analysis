@@ -14,8 +14,7 @@ def QueryExecute(database_name="news"):
 
 
 def Favoured_Stories():
-    query1 = ''' SELECT title, views FROM logsurvey_story,articles WHERE
-    articles.slug = logsurvey_story.slug ORDER BY views desc LIMIT 3; '''
+    query1 = ''' SELECT title, topviews FROM popular_views LIMIT 3; '''
     try:
         link, ind = QueryExecute()
         ind.execute(query1)
@@ -27,7 +26,7 @@ def Favoured_Stories():
         for p in range(len(ot)):
             tit = ot[p][0]
             vws = ot[p][1]
-            print("""   "{}" - {:,} views
+            print("""   "{}" --> {:,} views
             """.format(tit, vws))
     except:
         print("\nThere is a problem fetching data about the top articles.\n")
@@ -37,10 +36,12 @@ def Favoured_Stories():
 
 def Favoured_Writers():
     query2 = '''
-    SELECT logwriter_title.name AS author,
-    sum(logsurvey_story.views) AS views FROM logsurvey_story,logwriter_title
-    WHERE logwriter_title.slug=logsurvey_story.slug
-    GROUP BY logwriter_title.name ORDER BY views desc limit 4;
+    SELECT DISTINCT name,
+                      sum(topviews) AS topviews
+                      FROM popular_views JOIN authors
+                      ON (popular_views.author = authors.id)
+                      GROUP BY name
+                      ORDER BY topviews DESC;
     '''
     try:
         link, ind = QueryExecute()
@@ -53,7 +54,7 @@ def Favoured_Writers():
         for p in range(len(ot)):
             aut = ot[p][0]
             all_vws = ot[p][1]
-            print("""   {} - {:,} views
+            print("""   {} --> {:,} views
             """.format(aut, all_vws))
     except:
         print("\nThere is problem fetching data about the popular authors.\n")
@@ -63,13 +64,7 @@ def Favoured_Writers():
 
 def Fault_Survey():
     query3 = '''
-    SELECT logfault_abort.date ,
-    (logfault_abort.count*100.00 / logsurvey_overall.count)
-    AS percentage
-    FROM logfault_abort,logsurvey_overall
-    WHERE logfault_abort.date = logsurvey_overall.date
-    AND (logfault_abort.count*100.00 / logsurvey_overall.count) >1
-    ORDER BY (logfault_abort.count*100.00 /logsurvey_overall.count) desc;
+    select to_char(date,'DD Mon YYYY') as date,fault_prc from fault_perc where fault_prc > 1.0;
     '''
     try:
         link, ind = QueryExecute()
@@ -82,7 +77,7 @@ def Fault_Survey():
         for p in range(len(ot)):
             date = ot[p][0]
             pctgs = ot[p][1]
-            print("   %s -- % .1f %% \n" % (date, pctgs))
+            print("   %s --> % .1f %% \n" % (date, pctgs))
     except:
         print("\nThere is a problem fetching data",
               "about the percentage of errors\n")
